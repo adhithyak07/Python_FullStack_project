@@ -123,7 +123,7 @@ The API will be available at `https://localhost:8000`
 ### Key Components
 
 1. **`src/db.py`**:Database operations Handles all CRUD operations with supabase
-2. **`src\logic.py`**:Bussiness logic task validation and processing
+2. **`src/logic.py`**:Bussiness logic task validation and processing
 
 ### Trouble shooting
 
