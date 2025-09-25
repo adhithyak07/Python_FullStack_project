@@ -8,14 +8,13 @@ url=os.getenv("SUPABASE_URL")
 key=os.getenv("SUPABASE_KEY")
 
 supabase=create_client(url,key)
-
 # ===================== Gymrats Table =====================
 
 # Add Member
-def add_member(name, email, plan, start_date, end_date):
+def add_member(name, phone, plan, start_date, end_date):
     return supabase.table("gymrats").insert({
         "name": name,
-        "email": email,
+        "phone": phone,
         "plan": plan,
         "start_date": start_date,
         "end_date": end_date
@@ -30,32 +29,34 @@ def update_member(member_id, new_plan, new_end_date):
     return supabase.table("gymrats").update({
         "plan": new_plan,
         "end_date": new_end_date
-    }).eq("member_id", member_id).execute()
+    }).eq("id", member_id).execute()  # Use "id" here
 
 # Delete Member
 def delete_member(member_id):
-    return supabase.table("gymrats").delete().eq("member_id", member_id).execute()
-
+    return supabase.table("gymrats").delete().eq("id", member_id).execute()  # Use "id"
 
 # ===================== Payments Table =====================
 
 # Add Payment
-def add_payment(member_id, amount, payment_date, method):
-    return supabase.table("payments").insert({
-        "member_id": member_id,
+def add_payment(gymrat_id, amount, payment_date=None, method=None):
+    data = {
+        "gymrat_id": gymrat_id,
         "amount": amount,
-        "payment_date": payment_date,
-        "method": method
-    }).execute()
+    }
+    if payment_date:
+        data["payment_date"] = payment_date
+    if method:
+        data["method"] = method
+    return supabase.table("payments").insert(data).execute()
 
 # Get All Payments
 def get_all_payments():
     return supabase.table("payments").select("*").order("payment_date").execute()
 
 # Get Payments for a Member
-def get_payments_by_member(member_id):
-    return supabase.table("payments").select("*").eq("member_id", member_id).execute()
+def get_payments_by_member(gymrat_id):
+    return supabase.table("payments").select("*").eq("gymrat_id", gymrat_id).execute()
 
 # Delete Payment Record
 def delete_payment(payment_id):
-    return supabase.table("payments").delete().eq("payment_id", payment_id).execute()
+    return supabase.table("payments").delete().eq("id", payment_id).execute()
