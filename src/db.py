@@ -1,62 +1,99 @@
-# db_manager.py
 import os
+import logging
 from supabase import create_client
 from dotenv import load_dotenv
-# load environment variables
+from datetime import datetime, date
+
+# -------------------- Setup --------------------
+logging.basicConfig(level=logging.INFO)
 load_dotenv()
-url=os.getenv("SUPABASE_URL")
-key=os.getenv("SUPABASE_KEY")
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
+supabase = create_client(url, key)
 
-supabase=create_client(url,key)
-# ===================== Gymrats Table =====================
+# -------------------- Utility --------------------
+def to_iso(value):
+    """Convert date/datetime to ISO string."""
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    return value
 
-# Add Member
-def add_member(name, phone, plan, start_date, end_date):
-    return supabase.table("gymrats").insert({
+# -------------------- Gymrats Table --------------------
+def add_member(name, phone, plan, start_date=None, end_date=None):
+    if start_date is None:
+        start_date = date.today()
+    payload = {
         "name": name,
         "phone": phone,
         "plan": plan,
-        "start_date": start_date,
-        "end_date": end_date
-    }).execute()
-
-# Get All Members
-def get_all_members():
-    return supabase.table("gymrats").select("*").order("start_date").execute()
-
-# Update Membership Plan
-def update_member(member_id, new_plan, new_end_date):
-    return supabase.table("gymrats").update({
-        "plan": new_plan,
-        "end_date": new_end_date
-    }).eq("id", member_id).execute()  # Use "id" here
-
-# Delete Member
-def delete_member(member_id):
-    return supabase.table("gymrats").delete().eq("id", member_id).execute()  # Use "id"
-
-# ===================== Payments Table =====================
-
-# Add Payment
-def add_payment(gymrat_id, amount, payment_date=None, method=None):
-    data = {
-        "gymrat_id": gymrat_id,
-        "amount": amount,
+        "start_date": to_iso(start_date),
+        "end_date": to_iso(end_date) if end_date else None
     }
-    if payment_date:
-        data["payment_date"] = payment_date
+    try:
+        resp = supabase.table("gymrats").insert(payload).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def get_all_members(order_by="start_date"):
+    try:
+        resp = supabase.table("gymrats").select("*").order(order_by, desc=True).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def update_member(member_id, new_plan, new_end_date=None):
+    payload = {
+        "plan": new_plan,
+        "end_date": to_iso(new_end_date) if new_end_date else None
+    }
+    try:
+        resp = supabase.table("gymrats").update(payload).eq("id", str(member_id)).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def delete_member(member_id):
+    try:
+        resp = supabase.table("gymrats").delete().eq("id", str(member_id)).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# -------------------- Payments Table --------------------
+def add_payment(member_id, amount, payment_date=None, method=None):
+    if payment_date is None:
+        payment_date = datetime.now()
+    payload = {
+        "gymrat_id": str(member_id),
+        "amount": amount,
+        "payment_date": to_iso(payment_date),
+    }
     if method:
-        data["method"] = method
-    return supabase.table("payments").insert(data).execute()
+        payload["method"] = method
+    try:
+        resp = supabase.table("payments").insert(payload).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
-# Get All Payments
-def get_all_payments():
-    return supabase.table("payments").select("*").order("payment_date").execute()
+def get_all_payments(order_by="payment_date"):
+    try:
+        resp = supabase.table("payments").select("*").order(order_by, desc=True).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
-# Get Payments for a Member
-def get_payments_by_member(gymrat_id):
-    return supabase.table("payments").select("*").eq("gymrat_id", gymrat_id).execute()
+def get_payments_by_member(member_id):
+    try:
+        resp = supabase.table("payments").select("*").eq("gymrat_id", str(member_id)).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
-# Delete Payment Record
 def delete_payment(payment_id):
-    return supabase.table("payments").delete().eq("id", payment_id).execute()
+    try:
+        resp = supabase.table("payments").delete().eq("id", str(payment_id)).execute()
+        return {"success": True, "data": resp.data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

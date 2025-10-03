@@ -78,7 +78,7 @@ create table gymrats (
 
 create table payments (
   id serial primary key,
-  member_id uuid references members(id),
+  member_id uuid references gymrats(id),
   amount numeric not null,
   payment_date timestamp default now(),
   method text 
